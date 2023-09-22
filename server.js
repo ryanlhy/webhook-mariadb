@@ -17,7 +17,7 @@ const pool = mariadb.createPool({
 });
 
 app.use(bodyParser.json());
-
+app.get("/", (req, res) => res.send("Hello World! This is a webhook server"));
 app.post("/webhook", async (req, res) => {
   console.log("Received webhook:", req.body);
 
