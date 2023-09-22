@@ -18,6 +18,10 @@ const pool = mariadb.createPool({
 
 app.use(bodyParser.json());
 app.get("/", (req, res) => res.send("Hello World! This is a webhook server"));
+app.get("/myhome", (req, res) =>
+  res.send("Hello World! This is a webhook server at /home route!")
+);
+
 app.post("/webhook", async (req, res) => {
   console.log("Received webhook:", req.body);
 
