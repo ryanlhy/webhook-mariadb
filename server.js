@@ -22,6 +22,12 @@ app.get("/myhome", (req, res) =>
   res.send("Hello World! This is a webhook server at /home route!")
 );
 
+function parseDate(input) {
+  const parts = input.split("-");
+  const year = `20${parts[2]}`;
+  return `${year}-${parts[1]}-${parts[0]}`;
+}
+
 app.post("/webhook", async (req, res) => {
   console.log("Received webhook:", req.body);
 
@@ -55,13 +61,14 @@ app.post("/price-history-cards", async (req, res) => {
 
     const query = `INSERT INTO price_history_cards (Date, url, ebay_number, price, title) VALUES (?, ?, ?, ?, ?)`;
 
-    // Extract the respective fields from the payload
-    // Adjust as needed if the payload structure is different
+    const date = parseDate(req.body.Date); // Use the updated parseDate function
+    const price = parseFloat(req.body.price) || 0; // ensure price is a number
+
     const values = [
-      req.body.Date,
+      date,
       req.body.url,
       req.body.ebay_number,
-      req.body.price,
+      price,
       req.body.title,
     ];
 
@@ -76,8 +83,6 @@ app.post("/price-history-cards", async (req, res) => {
     if (conn) conn.release();
   }
 });
-
-// Existing code to start the server
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
