@@ -2,6 +2,7 @@
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
+const util = require("util");
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -9,6 +10,33 @@ const mariadb = require("mariadb");
 
 const app = express();
 const port = 3000;
+
+// save console.log output to a file
+// Define the file path
+const logFilePath = path.join(__dirname, "console.log");
+
+// Create a write stream
+const logStream = fs.createWriteStream(logFilePath, { flags: "a" }); // 'a' flag for appending
+
+// Override console.log
+const originalConsoleLog = console.log;
+console.log = function (...args) {
+  // Write to the console
+  originalConsoleLog.apply(console, args);
+
+  // Write to the file
+  logStream.write(util.format.apply(util, args) + "\n");
+};
+
+// Override console.error
+const originalConsoleError = console.error;
+console.error = function (...args) {
+  // Write to the console
+  originalConsoleError.apply(console, args);
+
+  // Write to the file
+  logStream.write(util.format.apply(util, args) + "\n");
+};
 
 // Use process.env to access environment variables
 const pool = mariadb.createPool({
