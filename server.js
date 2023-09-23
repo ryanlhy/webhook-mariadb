@@ -45,6 +45,40 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
+// webhook for price-history-cards
+app.post("/price-history-cards", async (req, res) => {
+  console.log("Received price-history-cards webhook:", req.body);
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    const query = `INSERT INTO price_history_cards (Date, url, ebay_number, price, title) VALUES (?, ?, ?, ?, ?)`;
+
+    // Extract the respective fields from the payload
+    // Adjust as needed if the payload structure is different
+    const values = [
+      req.body.Date,
+      req.body.url,
+      req.body.ebay_number,
+      req.body.price,
+      req.body.title,
+    ];
+
+    const result = await conn.query(query, values);
+    console.log("Data inserted, ID:", result.insertId);
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log("Error occurred:", err);
+    res.status(500).send(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Existing code to start the server
+
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
