@@ -55,6 +55,15 @@ app.post("/webhook", async (req, res) => {
 app.post("/price-history-cards", async (req, res) => {
   console.log("Received price-history-cards webhook:", req.body);
 
+  // Check if the payload is a test payload
+  if (
+    typeof req.body.data === "string" &&
+    req.body.data === "json_stringify_data"
+  ) {
+    console.log("Received test payload");
+    return res.sendStatus(200); // respond with 200 OK to acknowledge the test payload
+  }
+
   let conn;
   try {
     conn = await pool.getConnection();
