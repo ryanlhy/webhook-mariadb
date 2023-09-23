@@ -67,22 +67,20 @@ app.post("/price-history-cards", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-
     const query = `INSERT INTO price_history_cards (Date, url, ebay_number, price, title) VALUES (?, ?, ?, ?, ?)`;
 
-    const date = parseDate(req.body.Date); // Use the updated parseDate function
-    const price = parseFloat(req.body.price) || 0; // ensure price is a number
+    // Loop over each item in the "data" array
+    for (const item of req.body.data) {
+      const date = parseDate(item.Date[0]); // Parse the first element of the Date array
+      const url = item.__url ? item.__url[0] : null; // Access the first element of the __url array
+      const ebay_number = item.ebay_number[0]; // Access the first element of the ebay_number array
+      const price = parseFloat(item.price[0]) || 0; // Convert the first element of the price array to a number
+      const title = item.title[0]; // Access the first element of the title array
 
-    const values = [
-      date,
-      req.body.url,
-      req.body.ebay_number,
-      price,
-      req.body.title,
-    ];
-
-    const result = await conn.query(query, values);
-    console.log("Data inserted, ID:", result.insertId);
+      const values = [date, url, ebay_number, price, title];
+      const result = await conn.query(query, values);
+      console.log("Data inserted, ID:", result.insertId);
+    }
 
     res.sendStatus(200);
   } catch (err) {
