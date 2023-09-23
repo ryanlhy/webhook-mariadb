@@ -1,5 +1,7 @@
 // Require the 'dotenv' module and configure it
 require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -62,6 +64,15 @@ app.post("/price-history-cards", async (req, res) => {
   ) {
     console.log("Received test payload");
     return res.sendStatus(200); // respond with 200 OK to acknowledge the test payload
+  }
+
+  try {
+    // Save the payload to a JSON file
+    const filePath = path.join(__dirname, "payload.json"); // Adjust the file name and path as needed
+    fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+    console.log("Payload saved to", filePath);
+  } catch (err) {
+    console.error("Error saving payload to file:", err);
   }
 
   let conn;
