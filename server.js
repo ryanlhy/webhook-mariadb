@@ -46,6 +46,8 @@ const pool = mariadb.createPool({
   database: process.env.DB_NAME,
 });
 
+const apifyToken = process.env.APIFY_TOKEN;
+
 app.use(bodyParser.json());
 app.get("/", (req, res) => res.send("Hello World! This is a webhook server"));
 app.get("/myhome", (req, res) =>
@@ -178,6 +180,57 @@ app.post("/price-history-cards-apify", async (req, res) => {
     res.status(500).send(err);
   } finally {
     if (conn) conn.release();
+  }
+});
+
+app.post("/price-history-webscrape", async (req, res) => {
+  console.log("Received /price-history-webscrape webhook:", req.body);
+  // Check if the payload is a test payload
+  if (req.body.eventType && req.body.eventType === "TEST") {
+    console.log("Received test payload:", req.body);
+    return res.status(200).send({ message: "Test payload received!" });
+  }
+
+  try {
+    // Send out a GET request to fetch data
+    const response = await axios.get(
+      `https://api.apify.com/v2/actor-tasks/gallant_grasshopper~pricecharting/runs/last/dataset/items?token=${apifyToken}`
+    );
+    const data = response.data;
+
+    // Check the data format and adjust accordingly
+    if (Array.isArray(data) && data.length > 0) {
+      let conn;
+      try {
+        conn = await pool.getConnection();
+        const query = `INSERT INTO price_history_cards (Date, url, ebay_number, price, title) VALUES (?, ?, ?, ?, ?)`;
+
+        // Process the data and push to your table
+        for (const item of data) {
+          for (const result of item.results) {
+            const date = result.date;
+            const url = item.url;
+            const ebayNumber = result.ebay_number.split("-")[1];
+            const price = parseFloat(result.price.replace("$", "")) || 0;
+            const title = result.text;
+
+            const values = [date, url, ebayNumber, price, title];
+            const resultInsert = await conn.query(query, values);
+            console.log("Data inserted, ID:", resultInsert.insertId);
+          }
+        }
+      } catch (err) {
+        console.log("Database error:", err);
+        res.status(500).send(err);
+      } finally {
+        if (conn) conn.release();
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log("Error occurred:", err);
+    res.status(500).send(err);
   }
 });
 
