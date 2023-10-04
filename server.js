@@ -190,6 +190,8 @@ app.post("/price-history-webscrape", async (req, res) => {
   if (req.body.eventType && req.body.eventType === "TEST") {
     console.log("Received test payload:", req.body);
     return res.status(200).send({ message: "Test payload received!" });
+  } else {
+    console.log("Not a test payload:", req.body);
   }
 
   try {
@@ -198,6 +200,7 @@ app.post("/price-history-webscrape", async (req, res) => {
       `https://api.apify.com/v2/actor-tasks/gallant_grasshopper~pricecharting/runs/last/dataset/items?token=${apifyToken}`
     );
     const data = response.data;
+    console.log("Apify Data received:", data);
 
     // Check the data format and adjust accordingly
     if (Array.isArray(data) && data.length > 0) {
