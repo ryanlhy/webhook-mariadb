@@ -130,6 +130,57 @@ app.post("/price-history-cards", async (req, res) => {
   }
 });
 
+app.post("/price-history-cards-apify", async (req, res) => {
+  console.log("Received price-history-cards webhook:", req.body);
+
+  // Check if the payload is a test payload
+  if (
+    typeof req.body.data === "string" &&
+    req.body.data === "json_stringify_data"
+  ) {
+    console.log("Received test payload");
+    return res.sendStatus(200); // respond with 200 OK to acknowledge the test payload
+  }
+
+  try {
+    // Save the payload to a JSON file
+    const filePath = path.join(__dirname, "payload.json");
+    fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+    console.log("Payload saved to", filePath);
+  } catch (err) {
+    console.error("Error saving payload to file:", err);
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const query = `INSERT INTO price_history_cards (Date, url, ebay_number, price, title) VALUES (?, ?, ?, ?, ?)`;
+
+    // Loop over each item in the "data" array
+    for (const item of req.body.data) {
+      // For each item, loop over its nested "results" array
+      for (const result of item.results) {
+        const date = result.date; // You might want to check the format or parse it if necessary
+        const url = item.url;
+        const ebayNumber = result.ebay_number.split("-")[1]; // Extract the numeric part
+        const price = parseFloat(result.price.replace("$", "")) || 0; // Convert the price string to a number
+        const title = result.text;
+
+        const values = [date, url, ebayNumber, price, title];
+        const resultInsert = await conn.query(query, values);
+        console.log("Data inserted, ID:", resultInsert.insertId);
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log("Error occurred:", err);
+    res.status(500).send(err);
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
